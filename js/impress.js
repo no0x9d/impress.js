@@ -205,7 +205,9 @@
         
         perspective: 1000,
         
-        transitionDuration: 1000
+        transitionDuration: 1000,
+        
+        resetSubsteps: true,
     };
     
     // it's just an empty function ... and a useless comment.
@@ -343,13 +345,18 @@
             
             // initialize configuration object
             var rootData = root.dataset;
+			var resetSubsteps = defaults.resetSubsteps;
+            if('resetsubsteps' in rootData) {
+                resetSubsteps = rootData.resetSubsteps;
+            } 
             config = {
                 width: toNumber( rootData.width, defaults.width ),
                 height: toNumber( rootData.height, defaults.height ),
                 maxScale: toNumber( rootData.maxScale, defaults.maxScale ),
                 minScale: toNumber( rootData.minScale, defaults.minScale ),                
                 perspective: toNumber( rootData.perspective, defaults.perspective ),
-                transitionDuration: toNumber( rootData.transitionDuration, defaults.transitionDuration )
+                transitionDuration: toNumber( rootData.transitionDuration, defaults.transitionDuration ),
+                resetSubsteps: resetSubsteps
             };
             
             windowScale = computeWindowScale( config );
@@ -547,6 +554,25 @@
             
             return el;
         };
+		
+        // set the temporal state of the substep(s) to the given state ('past', 'present' or 'future')
+        var setSubstepsState = function (substeps, state) {
+            if (!substeps || !state) return; //not all parametes have values
+            
+            var states = ["past", "present", "future"];            
+            states.splice(states.indexOf(state), 1); //removing stat from the list of states to not disturbe styles based in this classes
+            
+            if (!Array.isArray(substeps)) {
+                substeps = [substeps];
+            }
+            
+            substeps.forEach(function(substep) {
+                states.forEach(function(s) {
+                    substep.classList.remove(s);
+                });
+                substep.classList.add(state);
+            });
+        };		
         
         // `prev` API function goes to previous step (in document order)
         var prev = function () {
@@ -556,12 +582,42 @@
             return goto(prev);
         };
         
-        // `next` API function goes to next step (in document order)
-        var next = function () {
-            var next = steps.indexOf( activeStep ) + 1;
-            next = next < steps.length ? steps[ next ] : steps[ 0 ];
+        // `next` API function goes to next substep of the current step or the next step (in document order)
+        // 'shortcut' = true goes to the next step ignoring all unrevealed substeps
+        var next = function (shortcut) {
+            var currentSubstep = $('.substep.present', activeStep); 
+            setSubstepsState(currentSubstep, 'past'); //set current substep to past
             
-            return goto(next);
+            var substeps = $$('.substep.future', activeStep);
+            
+            if (shortcut) {
+                setSubstepsState(substeps, 'past');
+            }
+
+            var substep = $('.substep.future', activeStep);
+
+            if (!substep) { //no further substep, goto next step
+                var next = steps.indexOf(activeStep) + 1;
+                next = next < steps.length ? steps[next] : steps[0];
+                
+                return goto(next);
+            } else {
+                if (substep.dataset.group) {    //show all substeps for a given group
+                    var groupid = substep.dataset.group;
+                    substeps.forEach(function (sub) {
+                        if (sub.dataset.group && sub.dataset.group == groupid) {
+                            sub.classList.remove("future");
+                            sub.classList.add("present");
+                        }
+                    });
+                }
+                else {
+                    substep.classList.remove("future");
+                    substep.classList.add("present");
+                }
+                return true;
+            }
+            
         };
         
         // Adding some useful classes to step elements.
@@ -581,17 +637,34 @@
             // STEP CLASSES
             steps.forEach(function (step) {
                 step.classList.add("future");
+				
+                var substeps = $$('.substep', step.el);
+                substeps.forEach(function (substep) {
+                    substep.classList.add("future");
+                });				
             });
             
             root.addEventListener("impress:stepenter", function (event) {
                 event.target.classList.remove("past");
                 event.target.classList.remove("future");
                 event.target.classList.add("present");
+				
+                //check if substeps should be resetted for this step
+                var resetSubsteps = config.resetSubsteps;
+                if ('resetsubsteps' in event.target.dataset) {
+                    resetSubsteps = event.target.dataset.resetSubsteps;
+                }
+                if (resetSubsteps) {
+                    setSubstepsState($$('.substep', event.target), 'future');
+                }				
             }, false);
             
             root.addEventListener("impress:stepleave", function (event) {
                 event.target.classList.remove("present");
                 event.target.classList.add("past");
+                
+                //set all substeps to 'past'
+                setSubstepsState($$('.substep', event.target), 'past');				
             }, false);
             
         }, false);
@@ -710,10 +783,12 @@
                              api.prev();
                              break;
                     case 9:  // tab
-                    case 32: // space
-                    case 34: // pg down
-                    case 39: // right
                     case 40: // down
+                    case 34: // pg down
+                             api.next(true);
+                            break;
+                    case 39: // right
+                    case 32: // space                    
                              api.next();
                              break;
                 }
