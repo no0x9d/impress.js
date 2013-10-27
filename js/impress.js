@@ -243,6 +243,9 @@
         // data of all presentation steps
         var stepsData = {};
         
+		// data of all assets and there actions
+        var assetActions = {};
+		
         // element of currently active step
         var activeStep = null;
         
@@ -251,6 +254,9 @@
         
         // array of step elements
         var steps = null;
+
+        // array of asset elements
+        var assets = null;
         
         // configuration options
         var config = null;
@@ -294,10 +300,10 @@
                 lastEntered = null;
             }
         };
-        
-        // `initStep` initializes given step element by reading data from its
+
+        // `initElement` initializes given element by reading data from its
         // data attributes and setting correct styles.
-        var initStep = function ( el, idx ) {
+        var initElement = function (el, idx) {
             var data = el.dataset,
                 step = {
                     translate: {
@@ -313,13 +319,7 @@
                     scale: toNumber(data.scale, 1),
                     el: el
                 };
-            
-            if ( !el.id ) {
-                el.id = "step-" + (idx + 1);
-            }
-            
-            stepsData["impress-" + el.id] = step;
-            
+
             css(el, {
                 position: "absolute",
                 transform: "translate(-50%,-50%)" +
@@ -328,7 +328,104 @@
                            scale(step.scale),
                 transformStyle: "preserve-3d"
             });
+            return step;
         };
+        
+        // `initStep` initializes given step element by reading data from its
+        // data attributes and setting correct styles.
+        var initStep = function (el, idx) {
+            if (el.classList.contains("asset")) {
+                return;
+            }
+            var step = initElement(el, idx)
+
+            if (!el.id) {
+                el.id = "step-" + (idx + 1);
+            }
+            stepsData["impress-" + el.id] = step;
+
+        };
+
+        // `initAsset` initializes given step element by reading data from its
+        // data attributes and setting correct styles.
+        var initAsset = function (el, idx) {
+            var asset = initElement(el, idx)
+
+            var data = el.dataset;
+            var stepdata = [];
+
+            if (data.showafter) {
+                var ids = data.showafter.split(' ');
+
+                steps.forEach(function (step, idx) {
+                    if (ids.indexOf(step.id) != -1) {
+                        stepdata.push({
+                            "index": idx,
+                            "step": step,
+                            "show": true
+                        });
+                    }
+                });
+            }
+            if (data.hideafter) {
+                var ids = data.hideafter.split(' ');
+
+                steps.forEach(function (step, idx) {
+                    if (ids.indexOf(step.id) != -1) {
+                        stepdata.push({
+                            "index": idx,
+                            "step": step,
+                            "show": false
+                        });
+                    }
+                });
+            }
+
+            stepdata.sort(function (a, b) {
+                return a.index - b.index;
+            })
+
+            if (stepdata[stepdata.length - 1].index != steps.length - 1) {
+                stepdata.push({
+                    "index": steps.length - 1,
+                    "step": steps[steps.length - 1],
+                    "show": !stepdata[stepdata.length - 1].show
+                });
+            }
+            var currentIndex = 0;
+            var lastIndex = -1;
+
+            stepdata.forEach(function (sd) {
+                while (currentIndex <= sd.index) {
+                    var step = steps[currentIndex];
+                    if (!assetActions[step.id]) {
+                        assetActions[step.id] = {
+                            leave: new Array(),
+                            enter: new Array()
+                        };
+                    }
+                    if (currentIndex < sd.index) {
+                        assetActions[step.id].leave.push({
+                            asset: el,
+                            show: !sd.show
+                        });
+                    }
+
+                    if (lastIndex != currentIndex) {
+                        assetActions[step.id].enter.push({
+                            asset: el,
+                            show: !sd.show
+                        });
+                    }
+
+                    lastIndex = currentIndex;
+                    if (currentIndex == sd.index) {
+                        break;
+                    }
+                    currentIndex++;
+                }
+            });
+        };		
         
         // `init` API function that initializes (and runs) the presentation.
         var init = function () {
@@ -394,8 +491,12 @@
             body.classList.add("impress-enabled");
             
             // get and init steps
-            steps = $$(".step", root);
+            steps = $$(".step:not(.asset)", root);
             steps.forEach( initStep );
+			
+            // get and init assets
+            assets = $$(".step.asset", root);
+            assets.forEach(initAsset);			
             
             // set a default initial state of the canvas
             currentState = {
@@ -666,6 +767,34 @@
                 //set all substeps to 'past'
                 setSubstepsState($$('.substep', event.target), 'past');				
             }, false);
+			
+            root.addEventListener("impress:stepenter", function (event) {
+                var target = event.target;
+                if (assetActions[target.id] && assetActions[target.id].enter) {
+                    var actions = assetActions[target.id].enter;
+                    actions.forEach(function (action) {
+                        if (action.show) {
+                            action.asset.classList.add("show")
+                        } else {
+                            action.asset.classList.remove("show")
+                        }
+                    });
+                }
+            }, false);
+
+            root.addEventListener("impress:stepleave", function (event) {
+                var target = event.target;
+                if (assetActions[target.id] && assetActions[target.id].leave) {
+                    var actions = assetActions[target.id].leave;
+                    actions.forEach(function (action) {
+                        if (action.show) {
+                            action.asset.classList.add("show")
+                        } else {
+                            action.asset.classList.remove("show")
+                        }
+                    });
+                }
+            }, false);			
             
         }, false);
         
