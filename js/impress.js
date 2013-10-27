@@ -677,18 +677,23 @@
         
         // `prev` API function goes to previous step (in document order)
         var prev = function () {
-            var prev = steps.indexOf( activeStep ) - 1;
+			var prev;
+			if (activeStep.dataset.prev) {
+				prev = getStep(activeStep.dataset.prev);
+			}
+			if(!prev){
+            prev = steps.indexOf( activeStep ) - 1;
             prev = prev >= 0 ? steps[ prev ] : steps[ steps.length-1 ];
-            
+            }
             return goto(prev);
         };
         
         // `next` API function goes to next substep of the current step or the next step (in document order)
         // 'shortcut' = true goes to the next step ignoring all unrevealed substeps
+
         var next = function (shortcut) {
             var currentSubstep = $('.substep.present', activeStep); 
             setSubstepsState(currentSubstep, 'past'); //set current substep to past
-            
             var substeps = $$('.substep.future', activeStep);
             
             if (shortcut) {
@@ -698,8 +703,13 @@
             var substep = $('.substep.future', activeStep);
 
             if (!substep) { //no further substep, goto next step
-                var next = steps.indexOf(activeStep) + 1;
-                next = next < steps.length ? steps[next] : steps[0];
+			    var next;
+			    if (activeStep.dataset.next) {
+				    next = getStep(activeStep.dataset.next);
+			    }
+			    if (!next) {
+                next = steps.indexOf( activeStep ) + 1;
+                next = next < steps.length ? steps[ next ] : steps[ 0 ]
                 
                 return goto(next);
             } else {
