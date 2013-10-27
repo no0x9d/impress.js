@@ -708,9 +708,9 @@
 				    next = getStep(activeStep.dataset.next);
 			    }
 			    if (!next) {
-                next = steps.indexOf( activeStep ) + 1;
-                next = next < steps.length ? steps[ next ] : steps[ 0 ]
-                
+					next = steps.indexOf( activeStep ) + 1;
+					next = next < steps.length ? steps[ next ] : steps[ 0 ]
+                }
                 return goto(next);
             } else {
                 if (substep.dataset.group) {    //show all substeps for a given group
