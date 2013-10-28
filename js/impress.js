@@ -278,8 +278,8 @@
         // last entered step.
         var onStepEnter = function (step) {
             if (lastEntered !== step) {
-                triggerEvent(step, "impress:stepenter");
                 lastEntered = step;
+                triggerEvent(step, "impress:stepenter");                
             }
         };
         
@@ -287,9 +287,9 @@
         // but the event is triggered only if the step is the same as
         // last entered step.
         var onStepLeave = function (step) {
-            if (lastEntered === step) {
-                triggerEvent(step, "impress:stepleave");
+            if (lastEntered === step) {                
                 lastEntered = null;
+                triggerEvent(step, "impress:stepleave");                
             }
         };
         
@@ -592,6 +592,12 @@
             root.addEventListener("impress:stepleave", function (event) {
                 event.target.classList.remove("present");
                 event.target.classList.add("past");
+            }, false);
+
+            root.addEventListener("impress:stepenter", function (event) {                
+                if(event.target.classList.contains("keyframe")){
+                    next(true)
+                }                
             }, false);
             
         }, false);
