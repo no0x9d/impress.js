@@ -286,8 +286,8 @@
         // last entered step.
         var onStepEnter = function (step) {
             if (lastEntered !== step) {
-                triggerEvent(step, "impress:stepenter");
-                lastEntered = step;
+				lastEntered = step;
+                triggerEvent(step, "impress:stepenter");                
             }
         };
         
@@ -296,8 +296,8 @@
         // last entered step.
         var onStepLeave = function (step) {
             if (lastEntered === step) {
-                triggerEvent(step, "impress:stepleave");
-                lastEntered = null;
+				lastEntered = null;
+                triggerEvent(step, "impress:stepleave");                
             }
         };
 
@@ -790,6 +790,12 @@
                         }
                     });
                 }
+            }, false);
+			
+			root.addEventListener("impress:stepenter", function (event) {
+				if(event.target.classList.contains("keyframe")){
+					next(true);
+				}
             }, false);
 
             root.addEventListener("impress:stepleave", function (event) {
