@@ -677,14 +677,18 @@
         
         // `prev` API function goes to previous step (in document order)
         var prev = function () {
-			var prev;
-			if (activeStep.dataset.prev) {
-				prev = getStep(activeStep.dataset.prev);
-			}
-			if(!prev){
-            prev = steps.indexOf( activeStep ) - 1;
-            prev = prev >= 0 ? steps[ prev ] : steps[ steps.length-1 ];
-            }
+			var prev = activeStep;
+			var idx = steps.indexOf( activeStep );
+			do{
+				if (prev.dataset.prev) {
+					prev = getStep(prev.dataset.prev);
+				}
+				if(!prev || prev == activeStep || prev.classList.contains("keyframe")){
+				prev = idx = idx - 1;
+				prev = prev >= 0 ? steps[ prev ] : steps[ steps.length-1 ];
+				}
+			}while (prev.classList.contains("keyframe"));
+			
             return goto(prev);
         };
         
