@@ -1,0 +1,89 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1024" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>impress.js | presentation tool based on the power of CSS3 transforms and transitions in modern browsers | by Bartek Szopka @bartaz</title>
+    
+    <meta name="description" content="impress.js is a presentation tool based on the power of CSS3 transforms and transitions in modern browsers and inspired by the idea behind prezi.com." />
+    <meta name="author" content="Bartek Szopka" />
+
+    <link href="http://fonts.googleapis.com/css?family=Open+Sans:regular,semibold,italic,italicsemibold|PT+Sans:400,700,400italic,700italic|PT+Serif:400,700,400italic,700italic" rel="stylesheet" />
+
+    <link href="../css/impress.css" rel="stylesheet" />
+    <link href="../css/impress-examples.css" rel="stylesheet" />
+    
+    <link rel="shortcut icon" href="favicon.png" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+</head>
+
+<body class="impress-not-supported">
+
+<div class="fallback-message">
+    <p>Your browser <b>doesn't support the features required</b> by impress.js, so you are presented with a simplified version of this presentation.</p>
+    <p>For the best experience please use the latest <b>Chrome</b>, <b>Safari</b> or <b>Firefox</b> browser.</p>
+</div>
+
+<div id="impress">
+
+    <div id="one" class="step circle nonlinear blue" data-x="-375" data-y="-250" data-prev="three" >
+        <h1>1</h1>
+    </div>
+
+    <div id="two" class="step circle nonlinear blue" data-x="-500" >
+        <h1>2</h1>
+    </div>
+
+    <div id="three" class="step circle nonlinear blue" data-x="-250" data-next="one">
+        <h1>3</h1>
+    </div>
+
+    <div class="step" data-x="-50" data-y="200">
+        <p>Press 'R'</p>
+    </div>
+
+    <div id="four" class="step circle nonlinear red" data-x="125" data-y="-250" data-prev="six">
+        <h1>4</h1>
+    </div>
+
+    <div id="five" class="step circle nonlinear red" data-x="0">
+        <h1>5</h1>
+    </div>
+
+    <div id="six" class="step circle nonlinear red" data-x="250" data-next="four">
+        <h1>6</h1>
+    </div>
+
+    <div class="step" data-x="500" data-y="200">
+        <p>Press 'B'</p>
+    </div>
+
+    <div class="step" data-x="0" data-y="-450">
+        <p>Use ← and → for navigation</p>
+    </div>
+</div>
+
+<div class="hint">
+    <p>Use a spacebar or arrow keys to navigate</p>
+</div>
+<script>
+if ("ontouchstart" in document.documentElement) { 
+    document.querySelector(".hint").innerHTML = "<p>Tap on the left or right to navigate</p>";
+}
+</script>
+
+<script src="../js/impress.js"></script>
+<script>impress().init();</script>
+<script>
+    document.addEventListener("keydown", function (e) {
+        if (e.keyCode == 66) { // 'B'
+            impress().goto("one");
+        } else if (e.keyCode == 82) { // 'R'
+            impress().goto("four");
+        }
+    }, false);
+</script>
+</body>
+</html>

@@ -19,7 +19,7 @@
 /*jshint bitwise:true, curly:true, eqeqeq:true, forin:true, latedef:true, newcap:true,
          noarg:true, noempty:true, undef:true, strict:true, browser:true */
 
-// You are one of those who like to know how thing work inside?
+// You are one of those who like to know how things work inside?
 // Let me show you the cogs that make impress.js run...
 (function ( document, window ) {
     'use strict';
@@ -205,7 +205,9 @@
         
         perspective: 1000,
         
-        transitionDuration: 1000
+        transitionDuration: 1000,
+        
+        resetSubsteps: true,
     };
     
     // it's just an empty function ... and a useless comment.
@@ -241,6 +243,9 @@
         // data of all presentation steps
         var stepsData = {};
         
+		// data of all assets and there actions
+        var assetActions = {};
+		
         // element of currently active step
         var activeStep = null;
         
@@ -249,6 +254,9 @@
         
         // array of step elements
         var steps = null;
+
+        // array of asset elements
+        var assets = null;
         
         // configuration options
         var config = null;
@@ -278,8 +286,8 @@
         // last entered step.
         var onStepEnter = function (step) {
             if (lastEntered !== step) {
-                triggerEvent(step, "impress:stepenter");
-                lastEntered = step;
+				lastEntered = step;
+                triggerEvent(step, "impress:stepenter");                
             }
         };
         
@@ -288,14 +296,14 @@
         // last entered step.
         var onStepLeave = function (step) {
             if (lastEntered === step) {
-                triggerEvent(step, "impress:stepleave");
-                lastEntered = null;
+				lastEntered = null;
+                triggerEvent(step, "impress:stepleave");                
             }
         };
-        
-        // `initStep` initializes given step element by reading data from its
+
+        // `initElement` initializes given element by reading data from its
         // data attributes and setting correct styles.
-        var initStep = function ( el, idx ) {
+        var initElement = function (el, idx) {
             var data = el.dataset,
                 step = {
                     translate: {
@@ -311,13 +319,7 @@
                     scale: toNumber(data.scale, 1),
                     el: el
                 };
-            
-            if ( !el.id ) {
-                el.id = "step-" + (idx + 1);
-            }
-            
-            stepsData["impress-" + el.id] = step;
-            
+
             css(el, {
                 position: "absolute",
                 transform: "translate(-50%,-50%)" +
@@ -326,7 +328,104 @@
                            scale(step.scale),
                 transformStyle: "preserve-3d"
             });
+            return step;
         };
+        
+        // `initStep` initializes given step element by reading data from its
+        // data attributes and setting correct styles.
+        var initStep = function (el, idx) {
+            if (el.classList.contains("asset")) {
+                return;
+            }
+            var step = initElement(el, idx)
+
+            if (!el.id) {
+                el.id = "step-" + (idx + 1);
+            }
+            stepsData["impress-" + el.id] = step;
+
+        };
+
+        // `initAsset` initializes given step element by reading data from its
+        // data attributes and setting correct styles.
+        var initAsset = function (el, idx) {
+            var asset = initElement(el, idx)
+
+            var data = el.dataset;
+            var stepdata = [];
+
+            if (data.showafter) {
+                var ids = data.showafter.split(' ');
+
+                steps.forEach(function (step, idx) {
+                    if (ids.indexOf(step.id) != -1) {
+                        stepdata.push({
+                            "index": idx,
+                            "step": step,
+                            "show": true
+                        });
+                    }
+                });
+            }
+            if (data.hideafter) {
+                var ids = data.hideafter.split(' ');
+
+                steps.forEach(function (step, idx) {
+                    if (ids.indexOf(step.id) != -1) {
+                        stepdata.push({
+                            "index": idx,
+                            "step": step,
+                            "show": false
+                        });
+                    }
+                });
+            }
+
+            stepdata.sort(function (a, b) {
+                return a.index - b.index;
+            })
+
+            if (stepdata[stepdata.length - 1].index != steps.length - 1) {
+                stepdata.push({
+                    "index": steps.length - 1,
+                    "step": steps[steps.length - 1],
+                    "show": !stepdata[stepdata.length - 1].show
+                });
+            }
+            var currentIndex = 0;
+            var lastIndex = -1;
+
+            stepdata.forEach(function (sd) {
+                while (currentIndex <= sd.index) {
+                    var step = steps[currentIndex];
+                    if (!assetActions[step.id]) {
+                        assetActions[step.id] = {
+                            leave: new Array(),
+                            enter: new Array()
+                        };
+                    }
+                    if (currentIndex < sd.index) {
+                        assetActions[step.id].leave.push({
+                            asset: el,
+                            show: !sd.show
+                        });
+                    }
+
+                    if (lastIndex != currentIndex) {
+                        assetActions[step.id].enter.push({
+                            asset: el,
+                            show: !sd.show
+                        });
+                    }
+
+                    lastIndex = currentIndex;
+                    if (currentIndex == sd.index) {
+                        break;
+                    }
+                    currentIndex++;
+                }
+            });
+        };		
         
         // `init` API function that initializes (and runs) the presentation.
         var init = function () {
@@ -343,13 +442,18 @@
             
             // initialize configuration object
             var rootData = root.dataset;
+			var resetSubsteps = defaults.resetSubsteps;
+            if('resetsubsteps' in rootData) {
+                resetSubsteps = rootData.resetSubsteps;
+            } 
             config = {
                 width: toNumber( rootData.width, defaults.width ),
                 height: toNumber( rootData.height, defaults.height ),
                 maxScale: toNumber( rootData.maxScale, defaults.maxScale ),
                 minScale: toNumber( rootData.minScale, defaults.minScale ),                
                 perspective: toNumber( rootData.perspective, defaults.perspective ),
-                transitionDuration: toNumber( rootData.transitionDuration, defaults.transitionDuration )
+                transitionDuration: toNumber( rootData.transitionDuration, defaults.transitionDuration ),
+                resetSubsteps: resetSubsteps
             };
             
             windowScale = computeWindowScale( config );
@@ -387,8 +491,12 @@
             body.classList.add("impress-enabled");
             
             // get and init steps
-            steps = $$(".step", root);
+            steps = $$(".step:not(.asset)", root);
             steps.forEach( initStep );
+			
+            // get and init assets
+            assets = $$(".step.asset", root);
+            assets.forEach(initAsset);			
             
             // set a default initial state of the canvas
             currentState = {
@@ -547,21 +655,84 @@
             
             return el;
         };
+		
+        // set the temporal state of the substep(s) to the given state ('past', 'present' or 'future')
+        var setSubstepsState = function (substeps, state) {
+            if (!substeps || !state) return; //not all parametes have values
+            
+            var states = ["past", "present", "future"];            
+            states.splice(states.indexOf(state), 1); //removing stat from the list of states to not disturbe styles based in this classes
+            
+            if (!Array.isArray(substeps)) {
+                substeps = [substeps];
+            }
+            
+            substeps.forEach(function(substep) {
+                states.forEach(function(s) {
+                    substep.classList.remove(s);
+                });
+                substep.classList.add(state);
+            });
+        };		
         
         // `prev` API function goes to previous step (in document order)
         var prev = function () {
-            var prev = steps.indexOf( activeStep ) - 1;
-            prev = prev >= 0 ? steps[ prev ] : steps[ steps.length-1 ];
-            
+			var prev = activeStep;
+			var idx = steps.indexOf( activeStep );
+			do{
+				if (prev.dataset.prev) {
+					prev = getStep(prev.dataset.prev);
+				}
+				if(!prev || prev == activeStep || prev.classList.contains("keyframe")){
+				prev = idx = idx - 1;
+				prev = prev >= 0 ? steps[ prev ] : steps[ steps.length-1 ];
+				}
+			}while (prev.classList.contains("keyframe"));
+			
             return goto(prev);
         };
         
-        // `next` API function goes to next step (in document order)
-        var next = function () {
-            var next = steps.indexOf( activeStep ) + 1;
-            next = next < steps.length ? steps[ next ] : steps[ 0 ];
+        // `next` API function goes to next substep of the current step or the next step (in document order)
+        // 'shortcut' = true goes to the next step ignoring all unrevealed substeps
+
+        var next = function (shortcut) {
+            var currentSubstep = $('.substep.present', activeStep); 
+            setSubstepsState(currentSubstep, 'past'); //set current substep to past
+            var substeps = $$('.substep.future', activeStep);
             
-            return goto(next);
+            if (shortcut) {
+                setSubstepsState(substeps, 'past');
+            }
+
+            var substep = $('.substep.future', activeStep);
+
+            if (!substep) { //no further substep, goto next step
+			    var next;
+			    if (activeStep.dataset.next) {
+				    next = getStep(activeStep.dataset.next);
+			    }
+			    if (!next) {
+					next = steps.indexOf( activeStep ) + 1;
+					next = next < steps.length ? steps[ next ] : steps[ 0 ]
+                }
+                return goto(next);
+            } else {
+                if (substep.dataset.group) {    //show all substeps for a given group
+                    var groupid = substep.dataset.group;
+                    substeps.forEach(function (sub) {
+                        if (sub.dataset.group && sub.dataset.group == groupid) {
+                            sub.classList.remove("future");
+                            sub.classList.add("present");
+                        }
+                    });
+                }
+                else {
+                    substep.classList.remove("future");
+                    substep.classList.add("present");
+                }
+                return true;
+            }
+            
         };
         
         // Adding some useful classes to step elements.
@@ -581,18 +752,69 @@
             // STEP CLASSES
             steps.forEach(function (step) {
                 step.classList.add("future");
+				
+                var substeps = $$('.substep', step.el);
+                substeps.forEach(function (substep) {
+                    substep.classList.add("future");
+                });				
             });
             
             root.addEventListener("impress:stepenter", function (event) {
                 event.target.classList.remove("past");
                 event.target.classList.remove("future");
                 event.target.classList.add("present");
+				
+                //check if substeps should be resetted for this step
+                var resetSubsteps = config.resetSubsteps;
+                if ('resetsubsteps' in event.target.dataset) {
+                    resetSubsteps = event.target.dataset.resetSubsteps;
+                }
+                if (resetSubsteps) {
+                    setSubstepsState($$('.substep', event.target), 'future');
+                }				
             }, false);
             
             root.addEventListener("impress:stepleave", function (event) {
                 event.target.classList.remove("present");
                 event.target.classList.add("past");
+                
+                //set all substeps to 'past'
+                setSubstepsState($$('.substep', event.target), 'past');				
             }, false);
+			
+            root.addEventListener("impress:stepenter", function (event) {
+                var target = event.target;
+                if (assetActions[target.id] && assetActions[target.id].enter) {
+                    var actions = assetActions[target.id].enter;
+                    actions.forEach(function (action) {
+                        if (action.show) {
+                            action.asset.classList.add("show")
+                        } else {
+                            action.asset.classList.remove("show")
+                        }
+                    });
+                }
+            }, false);
+			
+			root.addEventListener("impress:stepenter", function (event) {
+				if(event.target.classList.contains("keyframe")){
+					next(true);
+				}
+            }, false);
+
+            root.addEventListener("impress:stepleave", function (event) {
+                var target = event.target;
+                if (assetActions[target.id] && assetActions[target.id].leave) {
+                    var actions = assetActions[target.id].leave;
+                    actions.forEach(function (action) {
+                        if (action.show) {
+                            action.asset.classList.add("show")
+                        } else {
+                            action.asset.classList.remove("show")
+                        }
+                    });
+                }
+            }, false);			
             
         }, false);
         
@@ -710,10 +932,12 @@
                              api.prev();
                              break;
                     case 9:  // tab
-                    case 32: // space
-                    case 34: // pg down
-                    case 39: // right
                     case 40: // down
+                    case 34: // pg down
+                             api.next(true);
+                            break;
+                    case 39: // right
+                    case 32: // space                    
                              api.next();
                              break;
                 }

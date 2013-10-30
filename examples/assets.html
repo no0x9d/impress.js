@@ -1,0 +1,84 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1024" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>impress.js | presentation tool based on the power of CSS3 transforms and transitions in modern browsers | by Bartek Szopka @bartaz</title>
+    
+    <meta name="description" content="impress.js is a presentation tool based on the power of CSS3 transforms and transitions in modern browsers and inspired by the idea behind prezi.com." />
+    <meta name="author" content="Bartek Szopka" />
+
+    <link href="http://fonts.googleapis.com/css?family=Open+Sans:regular,semibold,italic,italicsemibold|PT+Sans:400,700,400italic,700italic|PT+Serif:400,700,400italic,700italic" rel="stylesheet" />
+
+    <link href="../css/impress.css" rel="stylesheet" />
+    <link href="../css/impress-examples.css" rel="stylesheet" />
+    
+    <link rel="shortcut icon" href="favicon.png" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+</head>
+
+<body class="impress-not-supported">
+
+<div class="fallback-message">
+    <p>Your browser <b>doesn't support the features required</b> by impress.js, so you are presented with a simplified version of this presentation.</p>
+    <p>For the best experience please use the latest <b>Chrome</b>, <b>Safari</b> or <b>Firefox</b> browser.</p>
+</div>
+
+<div id="impress">
+        
+    <div id="asset" class="step asset" data-showafter="step-6 step-3" data-hideafter="step-2 step-5">
+        <div><p>really ugly <br> ASSET</p></div>
+    </div>
+
+    <div class="step slide" data-x="-1000" >
+        <h1>Assets</h1>
+        <p>Graphical assets can be shown or hidden after specified steps with <code>data-showafter</code> and <code>data-hideafter</code>.</p>
+        <p>In this example a block will be hidden after step 2 and 5, and shown at the beginning (implicite, because the first action is a hide, so it should be visible before) and after step 3 and 6</p>
+    </div>
+
+    <div class="step assetstep" data-y="-200">
+        <h1>Step 2</h1>
+        <p>hide after this step.</p>
+    </div>
+
+    <div class="step assetstep" data-y="-100">
+        <h1>Step 3</h1>
+        <p>show after this step.</p>
+    </div>
+
+    <div class="step assetstep" data-y="0">
+        <h1>Step 4</h1>
+        <p>do nothing after this step.</p>
+    </div>
+
+    <div class="step assetstep" data-y="100">
+        <h1>Step 5</h1>
+        <p>hide after this step.</p>
+    </div>
+
+    <div class="step assetstep" data-y="200">
+        <h1>Step 6</h1>
+        <p>show after this step.</p>
+    </div>
+
+    <div class="step assetstep" data-y="300">
+        <h1>Step 7</h1>
+        <p>do nothing after this step.</p>
+    </div>
+</div>
+
+<div class="hint">
+    <p>Use a spacebar or arrow keys to navigate</p>
+</div>
+<script>
+if ("ontouchstart" in document.documentElement) { 
+    document.querySelector(".hint").innerHTML = "<p>Tap on the left or right to navigate</p>";
+}
+</script>
+
+<script src="../js/impress.js"></script>
+<script>impress().init();</script>
+</body>
+</html>

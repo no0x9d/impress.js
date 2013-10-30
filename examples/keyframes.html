@@ -1,0 +1,68 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1024" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>impress.js | presentation tool based on the power of CSS3 transforms and transitions in modern browsers | by Bartek Szopka @bartaz</title>
+    
+    <meta name="description" content="impress.js is a presentation tool based on the power of CSS3 transforms and transitions in modern browsers and inspired by the idea behind prezi.com." />
+    <meta name="author" content="Bartek Szopka" />
+
+    <link href="http://fonts.googleapis.com/css?family=Open+Sans:regular,semibold,italic,italicsemibold|PT+Sans:400,700,400italic,700italic|PT+Serif:400,700,400italic,700italic" rel="stylesheet" />
+
+    <link href="../css/impress.css" rel="stylesheet" />
+    <link href="../css/impress-examples.css" rel="stylesheet" />
+    
+    <link rel="shortcut icon" href="favicon.png" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+</head>
+
+<body class="impress-not-supported">
+
+<div class="fallback-message">
+    <p>Your browser <b>doesn't support the features required</b> by impress.js, so you are presented with a simplified version of this presentation.</p>
+    <p>For the best experience please use the latest <b>Chrome</b>, <b>Safari</b> or <b>Firefox</b> browser.</p>
+</div>
+
+<div id="impress">
+
+    <div id="do" class="step stay" >
+        <h1>DO</h1>
+    </div>
+
+    <div id="some" class="step keyframe" data-rotate-x="90" data-z="-25">
+        <h1>SOME</h1>
+    </div>
+
+    <div id="amazing" class="step keyframe reveal hide" data-y="50" data-rotate-x="180" >
+        <h1>AMAZING</h1>
+    </div>
+
+    <div id="effects" class="step keyframe reveal hide" data-x="-370" data-y="50" data-rotate-y="180" data-rotate-x="180">
+        <h1>EFFECTS</h1>
+    </div>
+
+    <div id="with" class="step keyframe reveal hide" data-x="-385" data-rotate-y="180">
+        <h1>WITH</h1>
+    </div>
+
+    <div id="keyframes" class="step reveal stay" data-x="100">
+        <h1>KEYFRAMES</h1>
+    </div>
+</div>
+
+<div class="hint">
+    <p>Use a spacebar or arrow keys to navigate</p>
+</div>
+<script>
+if ("ontouchstart" in document.documentElement) { 
+    document.querySelector(".hint").innerHTML = "<p>Tap on the left or right to navigate</p>";
+}
+</script>
+
+<script src="../js/impress.js"></script>
+<script>impress().init();</script>
+</body>
+</html>
